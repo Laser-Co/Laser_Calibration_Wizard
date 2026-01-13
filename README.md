@@ -2,9 +2,12 @@
 
 A streamlined tool for calibrating laser driver response curves. Creates Look-Up Tables (LUTs) that linearize perceived brightness for RGB laser systems.
 
-## Overview
+![Calibration Wizard Screenshot](images/screenshot_main.png)
+*Screenshot: Main calibration interface showing curve adjustment*
 
-Laser diodes don't respond linearly to PWM input - this tool lets you calibrate each channel (R/G/B) so that a 50% input produces 50% *perceived* brightness.
+## What Does This Do?
+
+Laser diodes don't respond linearly to PWM input - this tool lets you calibrate each channel (R/G/B) so that a 50% input produces 50% *perceived* brightness. Without calibration, your lasers may appear too dim at low values or jump suddenly in brightness.
 
 ### Features
 - Per-channel calibration (Red, Green, Blue)
@@ -13,6 +16,122 @@ Laser diodes don't respond linearly to PWM input - this tool lets you calibrate 
 - Real-time preview with manual slider and linear sweep
 - Export as C header file (.h) for ESP32
 - Save/load calibration profiles as JSON
+
+---
+
+## Complete Installation Guide (First-Time Setup)
+
+This guide assumes you've never installed Python or used the command line before. Follow each step carefully.
+
+### Step 1: Install Python (macOS)
+
+1. **Open Terminal**
+   - Press `Cmd + Space` to open Spotlight
+   - Type `Terminal` and press Enter
+   - A black/white window will open - this is Terminal
+
+2. **Check if Python is already installed**
+   ```bash
+   python3 --version
+   ```
+   - If you see `Python 3.x.x`, skip to Step 2
+   - If you see `command not found`, continue below
+
+3. **Install Homebrew** (macOS package manager)
+
+   Copy and paste this entire line into Terminal, then press Enter:
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+   - Follow the prompts (you may need to enter your password)
+   - This takes a few minutes
+
+4. **Install Python**
+   ```bash
+   brew install python
+   ```
+
+5. **Verify installation**
+   ```bash
+   python3 --version
+   ```
+   You should see `Python 3.11.x` or similar.
+
+### Step 2: Download This Project
+
+**Option A: Download ZIP (Easiest)**
+1. Click the green **Code** button at the top of this page
+2. Click **Download ZIP**
+3. Extract the ZIP to a location you'll remember (e.g., Documents)
+
+**Option B: Clone with Git (If you have git installed)**
+```bash
+cd ~/Documents
+git clone https://github.com/Laser-Co/Laser_Calibration_Wizard.git
+```
+
+### Step 3: Install Required Libraries
+
+1. **Open Terminal** (if not already open)
+
+2. **Navigate to the project folder**
+   ```bash
+   cd ~/Documents/Laser_Calibration_Wizard
+   ```
+   (Adjust the path if you extracted it elsewhere)
+
+3. **Create a virtual environment** (keeps things tidy)
+   ```bash
+   python3 -m venv venv
+   ```
+
+4. **Activate the virtual environment**
+   ```bash
+   source venv/bin/activate
+   ```
+   You should see `(venv)` at the start of your Terminal prompt.
+
+5. **Install the required packages**
+   ```bash
+   pip install PyQt6 pyserial
+   ```
+   Wait for the installation to complete.
+
+### Step 4: Run the Application
+
+**Option A: From Terminal**
+```bash
+python3 direct_calibration_wizard.py
+```
+
+**Option B: Double-click the launcher**
+1. In Finder, navigate to the project folder
+2. Double-click `run_direct_wizard.command`
+3. If you see a security warning:
+   - Go to System Preferences → Security & Privacy
+   - Click "Open Anyway"
+
+The calibration wizard window should now appear!
+
+### Troubleshooting Installation
+
+**"command not found: python3"**
+- Restart Terminal after installing Homebrew/Python
+- Try: `brew install python` again
+
+**"No module named PyQt6"**
+- Make sure you activated the venv: `source venv/bin/activate`
+- Reinstall: `pip install PyQt6 pyserial`
+
+**Permission denied on .command file**
+```bash
+chmod +x run_direct_wizard.command
+```
+
+**"App can't be opened because it is from an unidentified developer"**
+- Right-click the .command file → Open → Click "Open" in the dialog
+
+---
 
 ## Hardware Requirements
 
@@ -28,18 +147,9 @@ ESP32 GPIO 27 -> Blue laser driver PWM input
 GND           -> Common ground
 ```
 
-## Software Requirements
+---
 
-- Python 3.8+
-- PyQt6
-- pyserial
-
-Install dependencies:
-```bash
-pip install PyQt6 pyserial
-```
-
-## Usage
+## Usage Guide
 
 ### 1. Prepare ESP32
 
@@ -49,42 +159,37 @@ Before calibrating, upload the ESP32 driver with `USE_LUT false`:
 #define USE_LUT false  // Disable LUT for raw passthrough during calibration
 ```
 
-This ensures you're calibrating against raw PWM response.
+This ensures you're calibrating against raw PWM response, not an old calibration.
 
-### 2. Run the Wizard
+### 2. Connect to Your Laser
 
-```bash
-python direct_calibration_wizard.py
-```
+1. Plug in your ESP32 via USB
+2. In the wizard, select your ESP32's serial port from the dropdown
+3. Click **Connect**
+4. Status should show green "Connected"
 
-Or use the launcher:
-```bash
-./run_direct_wizard.command
-```
+![Connection Panel](images/screenshot_connect.png)
 
-### 3. Connect
-
-1. Select your ESP32's serial port from the dropdown
-2. Click **Connect**
-3. Status should show green "Connected"
-
-### 4. Calibrate Each Channel
+### 3. Calibrate Each Channel
 
 For each channel (Red, Green, Blue):
 
-1. Start with the **0%** and **1%** points - set the PWM value where light just becomes visible
-2. Adjust **50%** to match perceived half-brightness
-3. **100%** is typically max (65535 for 16-bit)
-4. Use **+ Add** buttons to insert more calibration points where needed
-5. Use the **Test** button or slider to preview each point
-6. Use **Linear Sweep** to verify smooth transitions
+1. **Set 0%** - This should be completely off (usually 0)
+2. **Set 1%** - The PWM value where light just becomes visible
+3. **Set 50%** - Adjust until it looks like half brightness
+4. **Set 100%** - Usually maximum (65535 for 16-bit)
+5. Use **+ Add** buttons to insert more points where needed
+6. Use the **Test** button or slider to preview
+7. Use **Linear Sweep** to verify smooth transitions
+
+![Calibration Points](images/screenshot_calibration.png)
 
 #### Tips
 - **Smooth mode** (default) creates natural curves without overshoot
 - **Linear mode** connects points with straight lines
 - Add more points in problem areas (e.g., 5%, 10%, 25% for better low-end detail)
 
-### 5. Export
+### 4. Export Your Calibration
 
 1. Go to the **EXPORT** tab
 2. Select LUT size:
@@ -93,7 +198,9 @@ For each channel (Red, Green, Blue):
 3. Click **Save .h File**
 4. Save as `laser_lut_smooth.h` in your ESP32 project folder
 
-### 6. Deploy
+![Export Tab](images/screenshot_export.png)
+
+### 5. Deploy to ESP32
 
 1. Copy the exported `.h` file to your `esp32_laser_driver/` folder
 2. Update the ESP32 code to enable LUT:
@@ -101,14 +208,18 @@ For each channel (Red, Green, Blue):
    #define USE_LUT true  // Enable calibration LUT
    ```
 3. Upload to ESP32
+4. Your lasers now have calibrated brightness response!
+
+---
 
 ## File Structure
 
 ```
-laser_calibration_direct/
+Laser_Calibration_Wizard/
 ├── direct_calibration_wizard.py   # Main application
 ├── run_direct_wizard.command      # macOS launcher script
 ├── README.md                      # This file
+├── images/                        # Screenshots for documentation
 └── savedLUTs/
     ├── 12Bit/                     # 12-bit PWM calibration profiles
     │   ├── laser_lut_smooth.h
@@ -117,6 +228,8 @@ laser_calibration_direct/
         ├── calibrationSmooth.h
         └── calibrationSmooth.json
 ```
+
+---
 
 ## Technical Details
 
@@ -143,6 +256,8 @@ const uint16_t BLUE_LUT[65536] PROGMEM = { ... };
 - Frequency: 1kHz
 - Verified flicker-free for human perception
 
+---
+
 ## Saved Profiles
 
 ### 12-Bit (Legacy)
@@ -151,22 +266,26 @@ Located in `savedLUTs/12Bit/` - for older configurations using 12-bit PWM with 4
 ### 16-Bit (Current)
 Located in `savedLUTs/16Bit/` - full 16-bit resolution with 65536-entry LUTs for maximum precision.
 
+---
+
 ## Troubleshooting
 
-**Laser too dim during calibration:**
-- Ensure `USE_LUT false` on ESP32 during calibration
+| Problem | Solution |
+|---------|----------|
+| Laser too dim during calibration | Ensure `USE_LUT false` on ESP32 |
+| Double-LUT effect (weird curves) | You're calibrating with `USE_LUT true` - disable it |
+| No serial ports found | Check USB connection, install USB-serial drivers |
+| Calibration looks wrong after deploy | Verify correct LUT size (65536 for 16-bit ESP32) |
+| App won't open on macOS | Right-click → Open, or allow in Security preferences |
 
-**Double-LUT effect (weird curves):**
-- You're calibrating with `USE_LUT true` - disable it first
-
-**No serial ports found:**
-- Check USB connection
-- Install appropriate USB-serial drivers for your ESP32
-
-**Calibration doesn't look right after deployment:**
-- Verify you exported the correct LUT size (65536 for 16-bit ESP32)
-- Ensure ESP32 has `USE_LUT true` after uploading new LUT
+---
 
 ## License
 
 MIT License - Feel free to use and modify for your projects.
+
+---
+
+## Contributing
+
+Found a bug or want to add a feature? Pull requests welcome!
